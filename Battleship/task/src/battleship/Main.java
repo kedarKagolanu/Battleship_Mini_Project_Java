@@ -1,23 +1,42 @@
 package battleship;
 
+import java.util.Scanner;
+
 public class Main {
 
     public static void main(String[] args) {
         // Write your code here
-        GameUI field = new GameUI(10,10);
-        Player player1 = new Player();
-        boolean continueGame = true;
+        Scanner in = new Scanner(System.in);
+        Player player1 = new Player("Player 1");
+        System.out.println("Press Enter and pass the move to another player\n");
+        in.nextLine();
+        System.out.println("............");
+
+        Player player2 = new Player("Player 2");
+        System.out.println("Press Enter and pass the move to another player\n");
+        in.nextLine();
+        System.out.println("............");
+
+        player1.setOpponentPlayer(player2);
+        player2.setOpponentPlayer(player1);
+
+        boolean GameIsOver = false;
 
         System.out.println("\nThe game starts!\n");
-        GameUI.printFogField();
         System.out.println("\nTake a shot!\n");
-        while(continueGame) {
-            try {
-                continueGame = player1.play();
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-        }
 
+        Player gamePlayer = player1;
+        while(!GameIsOver) {
+            gamePlayer.getOpponentPlayer().getFieldManager().printFogField();
+            System.out.println("---------------------");
+            gamePlayer.getFieldManager().printField();
+
+            GameIsOver = gamePlayer.play();
+            System.out.println("Press Enter and pass the move to another player\n");
+            in.nextLine();
+            System.out.println("............");
+
+            gamePlayer = gamePlayer.getOpponentPlayer();
+        }
     }
 }

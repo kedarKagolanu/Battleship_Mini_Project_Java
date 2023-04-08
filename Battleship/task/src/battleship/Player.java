@@ -5,12 +5,29 @@ import java.util.Scanner;
 
 public class Player {
 
-    ArrayList<Ship> shipsList;
+    private String name;
+    private ArrayList<Ship> shipsList;
+    int sunkShipCount = 0;
+    private final Field field;
+    private final FieldManager fieldManager;
+
+    private Player opponentPlayer;
 
     Scanner in = new Scanner(System.in);
-    char[][] field = GameUI.getBattleFieldArray();
 
-    public Player(){
+    public Player(String name){
+        this.name = name;
+        field = new Field(10,10);
+        fieldManager = new FieldManager(this,field);
+
+        initField();
+    }
+
+    public void setOpponentPlayer(Player opponent) {
+        opponentPlayer = opponent;
+    }
+
+    private void initField() {
         Scanner in = new Scanner(System.in);
         shipsList = new ArrayList<>();
 
@@ -19,9 +36,13 @@ public class Player {
             shipsList.add(ship);
         }
 
+        System.out.println(name+", place your ships on the game field");
+        fieldManager.printField();
+
         for(Ship s : shipsList) {
             int rowPos1,colPos1,rowPos2,colPos2;
-            System.out.println("\nEnter the coordinates of the "+ s.getShipModel().getModelName() +" ("+ s.getShipModel().getModelLength() +" cells):");
+
+            System.out.println("\nEnter the coordinates of the "+ s.getShipModel().getModelName() +" ("+ s.getShipModel().getModelLength() +" cells):\n");
             String[] inputs;
 
             while(true) {
@@ -35,9 +56,9 @@ public class Player {
                         rowPos2 = (((int) inputs[1].charAt(0)) - 65);
                         colPos2 = getColPosition(inputs[1]);
 
-                        s.setPosition(rowPos1, colPos1-1, rowPos2, colPos2-1);
+                        s.setPositionInField(this,rowPos1,rowPos2,colPos1,colPos2);
 
-                        GameUI.printField();
+                        fieldManager.printField();
                         break;
                     } else {
                         throw new Exception("Error! Wrong no of inputs. Try again:");
@@ -49,36 +70,40 @@ public class Player {
         }
     }
 
-    public boolean play() throws Exception {
+    public boolean play() {
 
-        String input = in.next().toUpperCase();
-        int rowCoordinate = (int)input.charAt(0)-65;
-        int colCoordinate = getColPosition(input)-1;
-        boolean continueGame = true;
+        System.out.println(name+", it's your turn:\n");
+        String input;
+        int rowCoordinate,colCoordinate;
+        boolean GameIsOver = false;
+        String message;
 
-        if(rowCoordinate < 0 || rowCoordinate >= GameUI.getRowSideLength()
-            || colCoordinate < 0 || colCoordinate >= GameUI.getColumnSideLength())
-        {
-            throw new Exception("\nError! You entered the wrong coordinates! Try again:\n");
+        while(true) {
+            input = in.next().toUpperCase();
+            rowCoordinate = (int)input.charAt(0)-65;
+            colCoordinate = getColPosition(input);
+
+            if(rowCoordinate < 0 || rowCoordinate >= field.verticalLength
+                    || colCoordinate < 0 || colCoordinate >= field.horizontalLength )
+            {
+                System.out.println("\nError! You entered the wrong coordinates! Try again:\n");
+                continue;
+            }
+
+            break;
         }
 
-        String message = null;
-        if(field[rowCoordinate][colCoordinate] == 'O' || field[rowCoordinate][colCoordinate] == 'X')  {
-            field[rowCoordinate][colCoordinate] = 'X';
-            message = "\nYou hit a ship!\n";
-        } else {
-            field[rowCoordinate][colCoordinate] = 'M';
-            message = "\nYou missed!\n";
-        }
+        attackOnOpponentCell(rowCoordinate,colCoordinate);
 
         if(allShipsAreDown()) {
-            message = "\nYou sank the last ship. You won. Congratulations!\n";
-            continueGame = false;
+            GameIsOver = true;
         }
 
-        GameUI.printField();
-        System.out.println(message);
-        return continueGame;
+        return GameIsOver;
+    }
+
+    private void attackOnOpponentCell(int row,int column) {
+        opponentPlayer.getFieldManager().setCell(row,column);
     }
 
     private boolean allShipsAreDown() {
@@ -95,9 +120,29 @@ public class Player {
     private int getColPosition(String input) {
         int colPos = 0;
         for(int i=1;i<input.length();i++) {
-            colPos = colPos*10 + (int)(input.charAt(i))-48;
+            colPos = colPos*10 + ((int)(input.charAt(i))-48);
         }
-        return colPos;
+        return colPos-1;
+    }
+
+    public FieldManager getFieldManager() {
+        return fieldManager;
+    }
+
+    public Player getOpponentPlayer() {
+        return opponentPlayer;
+    }
+
+    public ArrayList<Ship> getShipsList() {
+        return shipsList;
+    }
+
+    public int getSunkShipsCount() {
+        return sunkShipCount;
+    }
+
+    public void incrementShunkShipsCount() {
+        sunkShipCount++;
     }
 
 }
